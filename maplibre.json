@@ -5,7 +5,7 @@
 		"maputnik:renderer": "mbgljs"
 	},
     "glyphs": "assets/fonts/{fontstack}/{range}.pbf",
-    "sprite": "https://torontotechweek.github.io/assets/sprites/sprites",
+    "sprite": "https://mapcity.io/waterfront-marathon/assets/sprites/sprites",
 	"sources": {
 		"osm": {
 			"type": "vector",
