@@ -11,8 +11,16 @@
 
 <body>
 	<div id="map"></div>
+	<div id="time-container">
+		<div id="start-time" class="info-box"></div>
+		<div id="finish-time" class="info-box"></div>
+	</div>
 	<script>
-		
+		const raceStart = new Date("2025-10-19T08:00:00-04:00"); // Toronto time (EDT)
+		const raceFinish = new Date("2025-10-19T11:30:00-04:00");
+		const raceDuration = raceFinish - raceStart; // in ms
+		const raceDistance = 42200;
+
 		var map = new maplibregl.Map({
 			container: 'map',
 			style: 'maplibre.json',
@@ -53,20 +61,74 @@
                 "type": "circle",
                 "paint": {
 					"circle-color": "hsl(337, 100%, 45%)",
-					"circle-radius": 5
+					"circle-radius": 8
 				}
             });
         });
 
+		// Format time as h:mm AM/PM
+		const formatTime = (date) => {
+			return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+		};
+
+		// Populate the time boxes boxes
+		document.addEventListener("DOMContentLoaded", () => {
+			document.getElementById("start-time").textContent = `Start: ${formatTime(raceStart)}`;
+			document.getElementById("finish-time").textContent = `Finish: ${formatTime(raceFinish)}`;
+		});
+
+		// Popup content generator
+		const createPopupContent = (feature) => {
+			const { name, dist_m } = feature.properties;
+			const progress = Math.min(dist_m / raceDistance, 1);
+			const arrival = new Date(raceStart.getTime() + raceDuration * progress);
+
+			return `<strong>${name}</strong><br>ETA: ${formatTime(arrival)}`;
+		};
+
+		// Reusable hover popup
+		const hoverPopup = new maplibregl.Popup({
+			closeButton: false,
+			closeOnClick: false
+		});
+
+		// Only one clickPopup at a time
+    	let clickPopup = null;
+
+		// Generic popup setter
+		const showPopup = (popup, feature) => {
+			popup.setLngLat(feature.geometry.coordinates.slice())
+				.setHTML(createPopupContent(feature))
+				.addTo(map);
+		};
+
+		// --- Hover events ---
+		map.on('mouseenter', 'cheer_points', (e) => {
+			map.getCanvas().style.cursor = 'pointer';
+			showPopup(hoverPopup, e.features[0]);
+		});
+
+		map.on('mouseleave', 'cheer_points', () => {
+			map.getCanvas().style.cursor = '';
+			hoverPopup.remove();
+		});
+
+		// --- Click events ---
+		map.on('click', 'cheer_points', (e) => {
+			if (clickPopup) clickPopup.remove(); // close previous
+			clickPopup = new maplibregl.Popup({ closeButton: false });
+			showPopup(clickPopup, e.features[0]);
+		});
+
+		// Close click popup when clicking outside cheer points
 		map.on('click', (e) => {
-			const features = map.queryRenderedFeatures(e.point);
-			if (features.length > 0) {
-				features.forEach((feature, index) => {
-						console.log(`Feature ${index + 1}:`, feature);
-						console.log(`Properties:`, feature.properties); // Log only properties
-				});
-			} else {
-				console.log('No features found at this location.');
+			const features = map.queryRenderedFeatures(e.point, {
+				layers: ['cheer_points']
+			});
+
+			if (!features.length && clickPopup) {
+				clickPopup.remove();
+				clickPopup = null;
 			}
 		});
 
