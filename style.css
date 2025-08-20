@@ -15,8 +15,8 @@ body {
 
 #map {
     position: fixed;
-    top: 20px;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
 }

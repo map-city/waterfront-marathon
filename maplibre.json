@@ -230,7 +230,7 @@
 			"source-layer": "public_transport",
 			"filter": [ "in", "kind", "tram_stop", "light_rail" ],
 			"layout": {
-				"text-field": "{name}",
+				"text-field": "",
 				"icon-size": 0.4,
 				"symbol-placement": "point",
 				"text-font": [ "montserrat-semibold" ],
@@ -246,7 +246,7 @@
 			"paint": {
 				"icon-opacity": [ "interpolate", [ "linear" ], [ "zoom" ], 15, 0, 16, 1 ],
 				"text-opacity": [ "interpolate", [ "linear" ], [ "zoom" ], 15, 0, 16, 1 ],
-				"icon-color": "hsl(0, 0%, 40%)",
+				"icon-color": "hsl(290, 31%, 36%)",
 				"text-color": "hsl(0, 0%, 40%)",
 				"text-halo-color": "hsl(0, 0%, 100%)",
 				"text-halo-width": 0,
@@ -277,7 +277,7 @@
 			"paint": {
 				"icon-opacity": [ "interpolate", [ "linear" ], [ "zoom" ], 15, 0, 16, 1 ],
 				"text-opacity": [ "interpolate", [ "linear" ], [ "zoom" ], 15, 0, 16, 1 ],
-				"icon-color": "hsl(0, 0%, 40%)",
+				"icon-color": "hsl(310, 44%, 40%)",
 				"text-color": "hsl(0, 0%, 40%)",
 				"text-halo-color": "hsl(0, 0%, 100%)",
 				"text-halo-width": 0,
