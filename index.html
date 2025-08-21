@@ -13,20 +13,26 @@
 	<div id="map"></div>
 	<div id="time-container">
 		<div id="start-time" class="info-box"></div>
-		<div id="finish-time" class="info-box"></div>
+		<div id="finish-wrapper" >
+			<div id="finish-time" class="info-box"></div>
+			<button id="time-minus">-</button>
+			<button id="time-plus">+</button>
+		</div>
+  </div>
 	</div>
 	<script>
-		const raceStart = new Date("2025-10-19T08:00:00-04:00"); // Toronto time (EDT)
-		const raceFinish = new Date("2025-10-19T11:30:00-04:00");
-		const raceDuration = raceFinish - raceStart; // in ms
+		const timeInrecment = 5 * 60 * 1000;
 		const raceDistance = 42200;
+		const raceStart = new Date("2025-10-19T08:00:00-04:00"); // Toronto time (EDT)
+		let raceFinish = new Date("2025-10-19T11:30:00-04:00");
+		let raceDuration = raceFinish - raceStart; // in ms
 
 		var map = new maplibregl.Map({
 			container: 'map',
 			style: 'maplibre.json',
 			center: [-79.3794, 43.6462],
 			zoom: 12.5,
-            minZoom: 12.5,
+            minZoom: 11,
 			maxZoom: 18,
 			bearing: -14,
 			pitch: 0,
@@ -75,6 +81,22 @@
 		document.addEventListener("DOMContentLoaded", () => {
 			document.getElementById("start-time").textContent = `Start: ${formatTime(raceStart)}`;
 			document.getElementById("finish-time").textContent = `Finish: ${formatTime(raceFinish)}`;
+		});
+
+		// Update finish time and recompute raceDuration
+		const updateFinishTime = () => {
+			raceDuration = raceFinish - raceStart;
+			document.getElementById("finish-time").textContent = `Finish: ${formatTime(raceFinish)}`;
+		};
+
+		document.getElementById("time-minus").addEventListener("click", () => {
+			raceFinish = new Date(raceFinish.getTime() - timeInrecment);
+			updateFinishTime();
+		});
+
+		document.getElementById("time-plus").addEventListener("click", () => {
+			raceFinish = new Date(raceFinish.getTime() + timeInrecment);
+			updateFinishTime();
 		});
 
 		// Popup content generator
