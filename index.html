@@ -31,7 +31,7 @@
 			container: 'map',
 			style: 'maplibre.json',
 			center: [-79.3868, 43.6505],
-			zoom: 14.3,
+			zoom: 15,
             minZoom: 12,
 			maxZoom: 18,
 			bearing: -14,
@@ -40,15 +40,21 @@
 			hash: true
 		});
 
+		let cheerPointsData = null;
+
 		map.on('load', async () => {
 			map.addSource('route', {
 				'type': 'geojson',
 				'data': 'data/route.geojson'
 			});
 
+			// Load cheer points and store the data
+			const response = await fetch('data/cheer_points.geojson');
+			cheerPointsData = await response.json();
+
 			map.addSource('cheer_points', {
 				'type': 'geojson',
-				'data': 'data/cheer_points.geojson'
+				'data': cheerPointsData
 			});
 
             map.addLayer({
@@ -72,6 +78,26 @@
         			"circle-stroke-width": 4
 				}
             });
+			
+			map.addLayer({
+				"id": "cheer_points_etas",
+				"source": "cheer_points",
+				"type": "symbol",
+				"layout": {
+					"text-field": ["get", "eta"],
+					"text-size": 11,
+					"text-font": [ "montserrat-semibold" ],
+					"text-offset": [0, 2.2],
+					"text-anchor": "center",
+					"text-allow-overlap": false,
+					"text-ignore-placement": false
+				},
+				"paint": {
+					"text-color": "hsl(247, 100%, 45%)", 
+					"text-halo-color": "white",
+					"text-halo-width": 2
+				}
+			});
 
 			map.addLayer({
 				"id": "cheer_points_labels",
@@ -83,7 +109,7 @@
 					"text-font": [ "montserrat-semibold" ],
 					"text-offset": [0, 0],
 					"text-anchor": "center",
-					"text-allow-overlap": false,
+					"text-allow-overlap": true,
 					"text-ignore-placement": false
 				},
 				"paint": {
@@ -92,34 +118,14 @@
             		"text-halo-width": 2
 				}
 			});
+
+			updateAllETAs();
         });
 
 		// Format time as h:mm AM/PM
 		const formatTime = (date) => {
-			return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+			return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true});
 		};
-
-		// Populate the time boxes boxes
-		document.addEventListener("DOMContentLoaded", () => {
-			document.getElementById("start-time").textContent = `Start: ${formatTime(raceStart)}`;
-			document.getElementById("finish-time").textContent = `Finish: ${formatTime(raceFinish)}`;
-		});
-
-		// Update finish time and recompute raceDuration
-		const updateFinishTime = () => {
-			raceDuration = raceFinish - raceStart;
-			document.getElementById("finish-time").textContent = `Finish: ${formatTime(raceFinish)}`;
-		};
-
-		document.getElementById("time-minus").addEventListener("click", () => {
-			raceFinish = new Date(raceFinish.getTime() - timeInrecment);
-			updateFinishTime();
-		});
-
-		document.getElementById("time-plus").addEventListener("click", () => {
-			raceFinish = new Date(raceFinish.getTime() + timeInrecment);
-			updateFinishTime();
-		});
 
 		// Helper to get distances as array from feature object
 		// MapLibre has a weird behaviour that converts array -> string
@@ -135,8 +141,7 @@
 			return [parseFloat(dist_m) || 0];
 		};
 
-		// Popup content generator
-		const createPopupContent = (feature) => {
+		const calculateETAString = (feature) => {
 			const { name, dist_m } = feature.properties;
 			const distances = getDistancesArray(dist_m);
 			
@@ -150,54 +155,44 @@
 			const formattedEtas = etas.map(eta => formatTime(eta));
 			
 			return etaText = formattedEtas.length === 1 
-				? `<strong>ETA</strong>: ${formattedEtas[0]}` 
-				: `<strong>ETA</strong>: ${formattedEtas.join(', ')}`;
+				? `${formattedEtas[0]}` 
+				: `${formattedEtas.join(', ')}`;
 		};
 
-		// Reusable hover popup
-		const hoverPopup = new maplibregl.Popup({
-			closeButton: false,
-			closeOnClick: false
-		});
-
-		// Only one clickPopup at a time
-    	let clickPopup = null;
-
-		// Generic popup setter
-		const showPopup = (popup, feature) => {
-			popup.setLngLat(feature.geometry.coordinates.slice())
-				.setHTML(createPopupContent(feature))
-				.addTo(map);
-		};
-
-		// --- Hover events ---
-		map.on('mouseenter', 'cheer_points', (e) => {
-			map.getCanvas().style.cursor = 'pointer';
-			showPopup(hoverPopup, e.features[0]);
-		});
-
-		map.on('mouseleave', 'cheer_points', () => {
-			map.getCanvas().style.cursor = '';
-			hoverPopup.remove();
-		});
-
-		// --- Click events ---
-		map.on('click', 'cheer_points', (e) => {
-			if (clickPopup) clickPopup.remove(); // close previous
-			clickPopup = new maplibregl.Popup({ closeButton: false });
-			showPopup(clickPopup, e.features[0]);
-		});
-
-		// Close click popup when clicking outside cheer points
-		map.on('click', (e) => {
-			const features = map.queryRenderedFeatures(e.point, {
-				layers: ['cheer_points']
+		// Update all ETA labels
+		const updateAllETAs = () => {
+			if (!cheerPointsData) return;
+			
+			// Update the data with new ETAs
+			cheerPointsData.features.forEach(feature => {
+				feature.properties.eta = calculateETAString(feature);
 			});
+			
+			// Update the source data
+			map.getSource('cheer_points').setData(cheerPointsData);
+		};
 
-			if (!features.length && clickPopup) {
-				clickPopup.remove();
-				clickPopup = null;
-			}
+		// Populate the time boxes boxes
+		document.addEventListener("DOMContentLoaded", () => {
+			document.getElementById("start-time").textContent = `Start: ${formatTime(raceStart)}`;
+			document.getElementById("finish-time").textContent = `Finish: ${formatTime(raceFinish)}`;
+		});
+
+		// Update finish time and recompute raceDuration
+		const updateFinishTime = () => {
+			raceDuration = raceFinish - raceStart;
+			document.getElementById("finish-time").textContent = `Finish: ${formatTime(raceFinish)}`;
+			updateAllETAs();
+		};
+
+		document.getElementById("time-minus").addEventListener("click", () => {
+			raceFinish = new Date(raceFinish.getTime() - timeInrecment);
+			updateFinishTime();
+		});
+
+		document.getElementById("time-plus").addEventListener("click", () => {
+			raceFinish = new Date(raceFinish.getTime() + timeInrecment);
+			updateFinishTime();
 		});
 
 	</script>
