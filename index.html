@@ -66,10 +66,32 @@
                 "source": "cheer_points",
                 "type": "circle",
                 "paint": {
-					"circle-color": "hsl(337, 100%, 45%)",
-					"circle-radius": 8
+					"circle-color": "white",
+					"circle-radius": 12,
+					"circle-stroke-color": "hsl(337, 100%, 45%)",
+        			"circle-stroke-width": 4
 				}
             });
+
+			map.addLayer({
+				"id": "cheer_points_labels",
+				"source": "cheer_points",
+				"type": "symbol",
+				"layout": {
+					"text-field": ["get", "name"],
+					"text-size": 11,
+					"text-font": [ "montserrat-semibold" ],
+					"text-offset": [0, 0],
+					"text-anchor": "center",
+					"text-allow-overlap": false,
+					"text-ignore-placement": false
+				},
+				"paint": {
+					"text-color": "hsl(337, 100%, 0%)",
+					"text-halo-color": "white",
+            		"text-halo-width": 2
+				}
+			});
         });
 
 		// Format time as h:mm AM/PM
@@ -127,11 +149,9 @@
 			etas.sort((a, b) => a - b);			
 			const formattedEtas = etas.map(eta => formatTime(eta));
 			
-			let etaText = formattedEtas.length === 1 
-				? `ETA: ${formattedEtas[0]}` 
-				: `ETA: ${formattedEtas.join(', ')}`;
-			
-			return `<strong>${name}</strong><br>${etaText}`;
+			return etaText = formattedEtas.length === 1 
+				? `<strong>ETA</strong>: ${formattedEtas[0]}` 
+				: `<strong>ETA</strong>: ${formattedEtas.join(', ')}`;
 		};
 
 		// Reusable hover popup
