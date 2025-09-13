@@ -99,13 +99,39 @@
 			updateFinishTime();
 		});
 
+		// Helper to get distances as array from feature object
+		// MapLibre has a weird behaviour that converts array -> string
+		const getDistancesArray = (dist_m) => {
+			if (Array.isArray(dist_m)) return dist_m;
+			if (typeof dist_m === 'string' && dist_m.startsWith('[')) {
+				try {
+					return JSON.parse(dist_m);
+				} catch (e) {
+					return [0];
+				}
+			}
+			return [parseFloat(dist_m) || 0];
+		};
+
 		// Popup content generator
 		const createPopupContent = (feature) => {
 			const { name, dist_m } = feature.properties;
-			const progress = Math.min(dist_m / raceDistance, 1);
-			const arrival = new Date(raceStart.getTime() + raceDuration * progress);
-
-			return `<strong>${name}</strong><br>ETA: ${formatTime(arrival)}`;
+			const distances = getDistancesArray(dist_m);
+			
+			const etas = distances.map(distance => {
+				const progress = Math.min(distance / raceDistance, 1);
+				const arrival = new Date(raceStart.getTime() + raceDuration * progress);
+				return arrival;
+			});			
+			
+			etas.sort((a, b) => a - b);			
+			const formattedEtas = etas.map(eta => formatTime(eta));
+			
+			let etaText = formattedEtas.length === 1 
+				? `ETA: ${formattedEtas[0]}` 
+				: `ETA: ${formattedEtas.join(', ')}`;
+			
+			return `<strong>${name}</strong><br>${etaText}`;
 		};
 
 		// Reusable hover popup
